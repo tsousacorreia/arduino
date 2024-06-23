@@ -7,8 +7,9 @@
 #define pinMotorE2 9 // Motor Esquerdo Reverso
 
 // Pinos dos sensores Infravermelho
-#define pinSensorD 4
-#define pinSensorE 7
+#define pinSensorD 4 // Sensor direito
+#define pinSensorE 7 // Sensor esquerdo
+#define pinSensorF 12 // Sensor frontal
 
 // Pinos do sensor ultrassônico
 const int trigPin = 2;
@@ -28,6 +29,7 @@ void setup() {
   // Configuração dos pinos dos sensores
   pinMode(pinSensorD, INPUT);
   pinMode(pinSensorE, INPUT);
+  pinMode(pinSensorF, INPUT);
 
   // Inicializando a comunicação serial (para depuração)
   Serial.begin(9600);
@@ -35,25 +37,36 @@ void setup() {
 
 void loop() {
   // Lendo os sensores infravermelho
-  int leituraEsquerda = digitalRead(pinSensorE);
   int leituraDireita = digitalRead(pinSensorD);
+  int leituraEsquerda = digitalRead(pinSensorE);
+  int leituraFrente = digitalRead(pinSensorF);
 
   // Medindo a distância com o sensor ultrassônico
   int distancia = sonar.ping_cm();
 
-  motorEsquerdoFrente(100);
-  motorDireitoReverso(100);
+  // Girar no próprio eixo
+  motorEsquerdoFrente(80);
+  motorDireitoReverso(80);
 
   if (distancia > 0 && distancia <= 30) {
-      // Evitar a borda da arena
-      motorEsquerdoReverso(250);
-      motorDireitoReverso(250);
-        if (leituraEsquerda == HIGH || leituraDireita == HIGH) {
-          // Sensor esquerdo detecta borda, voltar para a direita
-          motorEsquerdoFrente(150);
-          motorDireitoFrente(100);
+    motorEsquerdoReverso(250);
+    motorDireitoReverso(250);
+      if (leituraEsquerda == HIGH || leituraDireita == HIGH) {
+        // Sensores detectam borda, parar os motores e retroceder
+        pararMotores();
+        delay(1000);
+        motorEsquerdoFrente(100);
+        motorDireitoFrente(100);
+        delay(750);
+        // Sensor frontal detecta borda, parar os motores e retroceder
+        if (leituraFrente == HIGH) {
+          pararMotores();
           delay(1000);
-        } 
+          motorEsquerdoReverso(100);
+          motorDireitoReverso(100);
+          delay(500);
+        }
+      } 
   }
 
   // Opcional: imprimir a distância para depuração
